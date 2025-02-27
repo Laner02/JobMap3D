@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="{% static 'output.css' %}">
+        <title>Job Map 3D</title>
+        <!-- ImportMap for the browser to install the JS libraries of Three.js -->
+        <script type="importmap">
+            {
+              "imports": {
+                "three": "../assets/three/build/three.module.js",
+                "three/addons/": "../assets/three/examples/jsm/"
+              }
+            }
+        </script>
+    </head>
+    <body>
+        <!-- TODO do we need shaders here? -->
+        {% block topbar %}
+        <div id="topbar-container">
+            <header class="flex-col grid grid-cols-[0.2fr,0.6fr,0.2fr] items-center text-semibold text-gray-200 h-16 ml-4 mr-3 text-xl border-b shadow-md">
+                <span id="app-title" class="flex h-full w-full items-center justify-start">JOB MAP 3D</span>
+                <div id="searchbar" class="flex items-center justify-center mx-2 my-1">
+                    <div class="border rounded-full inset-shadow-sm">
+                        <span class="text-gray-200 text-md">Busca un empleo, localidad...</span>
+                        <!-- TODO meter aqui svg de la lupa-->
+                    </div>
+                </div>
+                <span></span>
+            </header>
+        </div>
+        {% endblock %}
+
+
+        <script src="{% static 'main.bundle.js' %}"></script>
+    </body>
+</html>
