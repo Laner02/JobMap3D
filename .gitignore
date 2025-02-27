@@ -1,0 +1,8 @@
+# Django #
+*.log
+*.pyc
+__pycache__
+node_modules
+#Uncomment this when releasing or cleaning up
+#/Label3R-main/media/pcFiles
+#Label3R-main/db.sqlite3
