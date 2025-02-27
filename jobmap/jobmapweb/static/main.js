@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import WebGL from 'three/addons/capabilities/WebGL.js';                         // WebGL compatibility
 import { ArcballControls } from 'three/addons/controls/ArcballControls.js';     // Arcball Controls
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
-import { getCookie } from './utilities.js';                                     // Utilities exportable functions
+import { getCookie, countElement } from './utilities.js';                                     // Utilities exportable functions
 //#endregion
 
 //#region Variables
@@ -208,3 +208,418 @@ window.onmouseup = function(event) {
     // TODO events that happen when the user stops pressing a mouse button
 }
 
+// On pointer movement, tracks the mouse pointer 2d position
+document.addEventListener( 'mousemove', (e) => {
+    // When the pointer moves, save its coords
+    let rect = renderer.domElement.getBoundingClientRect();
+    pointer.x = ( ( e.clientX - rect.left ) / rect.width ) * 2 - 1;
+    pointer.y = - ( ( e.clientY - rect.top ) / rect.height ) * 2 + 1;       // negative or it will invert the Y axis
+});
+
+// Listener for the context menu inside the visualizer canvas, to prevent it from appearing on right-click
+document.getElementById( "canvasThree" ).addEventListener('contextmenu', (e) => {
+    e.preventDefault()
+});
+
+// TODO for testing purposes only
+// Test function to see whats inside the scene
+function checkScene() {
+    console.log(scene);
+}
+
+/* ONLOAD FUNCTION */
+// This function is called when the whole document is loaded
+window.onload = function() {
+
+    // Sets loading to true
+    is_loading = true;
+
+    // At this point, the map 3d model is already loaded
+
+    // TODO set here all buttons event listeners
+
+    /* TOOLBAR SECTION */
+    // When the user clicks the logo
+    document.getElementById( "appLogo" ).addEventListener( 'click', (e) => {
+        goToIndex()     // TODO Add this function
+        e.stopPropagation()
+    })
+
+    // TODO just as an example of dialog windows management
+    /* IMPORT MENU */
+    // Shows Import pointcloud menu popup onclick
+    document.getElementById( "importPC" ).addEventListener( 'click', (e) => {
+        showBlackout()
+        // isUserInPopup = true;   // TODO this should go into the show and hide popup methods
+        document.getElementById( "importFilePopup" ).style.display = "block";
+    })
+
+    // Closes the import menu popup on cancel button click
+    document.getElementById( "importPCclose" ).addEventListener( 'click', (e) => {
+        closeImportMenu()
+        e.stopPropagation()
+    })
+
+    // TODO is this needed?
+
+    // Saves the loading icon, for optimization
+    loadIcon = document.getElementById( "loadIcon" );
+    loadBack = document.getElementById( "loadBack" );
+    loadBack.style.display = "none";
+
+    // Hides the loading screen panel
+    document.getElementById( "loadingPanel" ).style.display = "none";
+
+    // Sets loading to finished
+    is_loading = false;
+}
+
+/* ANIMATE FUNCTION */
+// Renders the scene with the camera given every frame. This method holds almost every action on runtime
+function animate() {
+
+    // TODO make a contition for animate?? So its optimized?
+    requestAnimationFrame( animate );
+
+    resizeCanvas();
+    render();   // TODO add the render function
+
+}
+
+/* ANIMATE EVERY FRAME */
+// WebGL compatibility check
+if ( WebGL.isWebGLAvailable() ) {
+
+    // I initiate functions o other initializations here
+    animate();
+
+} else {
+
+    // If the browser does not support WebGL, displays a warning
+    const warning = WebGL.getWebGLErrorMessage();
+    // TODO idk if container is an id I should have on the page ???
+    document.getElementById( 'container' ).appendChild( warning );
+
+}
+
+/* AUX FUNCTIONS */
+// Initializes a Vector3 array with the points received from the view on backend
+// TODO REMAKE THIS FUNCTION SO IT NOW SETS THE COUNTER NUMBER OF OFFERS ON THE CORRECT POSITIONS ON THE 3D world
+function createPointCloud() {
+    // We can access the variables on the other js if the js is imported before this one is
+    // Parse the whole json to an array with the 3 coords, all in number type, its crazy i love JSON
+    let tmpCoords = JSON.parse(coords);
+
+    let size = tmpCoords.length;
+
+    // Doing this do we leave any trash memory?
+    // Point Attributes Arrays
+    let vertices = [];
+    let colors = [];
+    let opacity = [];
+    let pointSizes = [];
+    pc_label_list = [];
+    // Coords array for the boundingbox
+    let coordsBound = [];
+
+    color = new THREE.Color();
+    
+    // Iterate through the array
+    for (let i=0; i<size; i++) {
+        let currentPoint = tmpCoords[i];
+        vertices.push( currentPoint[0], currentPoint[1], currentPoint[2] );
+        coordsBound.push( new THREE.Vector3( currentPoint[0], currentPoint[1], currentPoint[2] ) );
+        opacity.push( 1 );                      // Set all opacity to 1
+        pointSizes.push( POINT_OG_SIZE );
+        pc_label_list.push( currentPoint[3] );  // Saves the point tag id
+
+        // If its VOID labeled, paint it default. If it has a tag, paint it with the tag color
+        if ( currentPoint[3] == 0 ) {
+            color.setHSL( 0, 0, 0 );                // Sets color to black by default
+            color.toArray( colors, i * 3 );         // Sets in the colors array the 3 HSL values
+        } else {
+            // This makes for a O(n^2) complexity, the performance might die
+            // Checks the tag of the point, to set it by default or to its tag color
+            for (const tag of tag_list_db) {
+                let curr_tag_tmp = tag;
+                if ( curr_tag_tmp[0] == currentPoint[3] )
+                    colors.push( curr_tag_tmp[1], curr_tag_tmp[2], curr_tag_tmp[3] );
+            }
+        }
+    }
+
+    // Saves the starting labeling array for undo. And the starting color array
+    undoLabelList = [];
+    undoLabelList.push( pc_label_list );
+
+    // Generates the points geometry
+    pointGeometry = new THREE.BufferGeometry();
+    pointGeometry.setAttribute( "position", new THREE.BufferAttribute( new Float32Array( vertices ), 3 ) );    // Sets as geometry attributes all positions
+    pointGeometry.setAttribute( "customColor", new THREE.BufferAttribute( new Float32Array( colors ), 3 ) ) ;  // Same here, but the 3 says for each geometry takes the values 3 by 3, thats so clever
+    pointGeometry.setAttribute( "opacity", new THREE.BufferAttribute( new Float32Array( opacity ), 1 ) );
+    pointGeometry.setAttribute( "size", new THREE.BufferAttribute( new Float32Array( pointSizes ), 1 ) );
+
+    // The alphaTest is the value from where if a point has less alpha than that bcs of the distance, it doesnt render
+    // Points material shader
+    const pMaterial = new THREE.ShaderMaterial( {
+        uniforms: {
+            color: { value: new THREE.Color( 0xffffff ) },
+            pointTexture: { value: new THREE.TextureLoader().load( '/static/label3r/images/disc.png' ) },
+            alphaTest: { value: 0.3 }
+        },
+        vertexShader: document.getElementById( 'vertexshader' ).textContent,
+        fragmentShader: document.getElementById( 'fragmentshader' ).textContent
+    });
+
+    // Displays the total points of the pointcloud at the information card
+    document.getElementById( "pcTotalPoints" ).innerHTML = "Total Points: " + pointGeometry.attributes.position.count;
+
+    // Adds the points to the scene
+    points = new THREE.Points( pointGeometry, pMaterial );
+    points.name = "points";
+    points.position.set( 0,0,0 );
+    scene.add( points );
+
+    // Creates a bounding box and make the camera look at it
+    pcBoundingBox = new THREE.Box3().setFromPoints( coordsBound );
+    pcBoundBoxMeasures = pcBoundingBox.getSize(new THREE.Vector3());
+    document.getElementById( "ptInfoLive" ).innerHTML = " Box Measures: width " + pcBoundBoxMeasures.x.toFixed(2) +" / height " + pcBoundBoxMeasures.y.toFixed(2) + " / depth " + pcBoundBoxMeasures.z.toFixed(2) + " ";
+    // Creates a Box Helper to visualize the bounding box
+    boundingBoxWireframe = new THREE.Box3Helper( pcBoundingBox, 0x000000 );
+    boundingBoxWireframe.material.opacity = 0.5;
+    scene.add( boundingBoxWireframe );
+    positionCamera( pcBoundingBox );
+
+    // Calculates the max distance between 2 points inside the bounding box
+    const boundMin = pcBoundingBox.min;
+    const boundMax = pcBoundingBox.max;
+
+    // Calculates all possible distances
+    var boundDistances = [
+        boundMin.distanceTo(new THREE.Vector3(boundMin.x, boundMin.y, boundMin.z)),
+        boundMin.distanceTo(new THREE.Vector3(boundMin.x, boundMin.y, boundMax.z)),
+        boundMin.distanceTo(new THREE.Vector3(boundMin.x, boundMax.y, boundMin.z)),
+        boundMin.distanceTo(new THREE.Vector3(boundMin.x, boundMax.y, boundMax.z)),
+        boundMin.distanceTo(new THREE.Vector3(boundMax.x, boundMin.y, boundMin.z)),
+        boundMin.distanceTo(new THREE.Vector3(boundMax.x, boundMin.y, boundMax.z)),
+        boundMin.distanceTo(new THREE.Vector3(boundMax.x, boundMax.y, boundMin.z)),
+        boundMin.distanceTo(new THREE.Vector3(boundMax.x, boundMax.y, boundMax.z)),
+        boundMax.distanceTo(new THREE.Vector3(boundMax.x, boundMax.y, boundMax.z)),
+        boundMax.distanceTo(new THREE.Vector3(boundMax.x, boundMax.y, boundMin.z)),
+        boundMax.distanceTo(new THREE.Vector3(boundMax.x, boundMin.y, boundMax.z)),
+        boundMax.distanceTo(new THREE.Vector3(boundMax.x, boundMin.y, boundMin.z)),
+    ];
+
+    pointsMaxDistance = Math.max(...boundDistances);
+
+}
+
+// TODO Use this function to make the camera look at the middle of the model when its created or reseted
+// Positions the camera near the map model, and looks at it
+function positionCamera( boundingBox ) {
+    const center = boundingBox.getCenter( new THREE.Vector3() );
+    const radius = boundingBox.getSize( new THREE.Vector3() ).length() * 0.5;
+    const distance = radius / Math.tan( Math.PI * camera.fov / 360 );
+    camera.position.set( center.x, center.y, center.z + distance );
+    controls.target.set( center.x, center.y, center.z );
+    controls.update()   // Arcball controls update must be called after manual camera changes
+}
+
+// Renders the scene on runtime, detecting interactions with pointclouds
+function render() {
+    // TODO Here code what happens each frame, code here the raycasting functionality
+}
+
+// Locates the point with the id received and returns a Vector3 with its position. Saves accessing attributes.
+// TODO Adapt this to the new map model positioning and geometry
+function getPointPos(pointId) {
+    const geometry = points.geometry;
+    const attributes = geometry.attributes;
+
+    // Gets the actual point index inside the position array
+    const pointIndex = pointId * 3 % attributes.position.array.length;
+    
+    let position = new THREE.Vector3( attributes.position.array[pointIndex], attributes.position.array[pointIndex+1], attributes.position.array[pointIndex+2] );
+
+    return position;
+}
+
+// Gets the distance from the controls camera obj to the target object (the map 3d model) centroid
+function getDistanceToMap() {
+    return controls.camera.position.distanceTo(controls.target);
+}
+
+// TODO remake this function so it selects and changes the display of the map to a dashboard, geolocation color map, or frequency map.
+function selectMapMode(mapMode) {
+
+    let tagId;
+
+    // If the tag is passed as a string with the id of the HTMLElement
+    if ( String(mapMode).includes('-') ) {
+        // Gets the color of the tag
+        let tagTmp = mapMode.split('-');
+        tagId = Number(tagTmp[1]);
+    } else {
+        // TODO check first it is a int, if no, alert
+        tagId = Number(mapMode);
+    }
+
+    // Set the current color to the color the tag is associated with
+    let tagColor = StrToRGB( document.getElementById("colorShow-" + tagId).style.background );
+
+    if ( !isTagActive ) {
+        // sets the new tag id, and color
+        current_selectedTag = tagId;
+        current_tagColor = tagColor;
+
+        isTagActive = true;
+    } else {
+        // If there was an active tag and it was the same as the selected, resets it
+        if( tagColor.toString() == current_tagColor.toString() ) {
+            // Reset currentTagColor
+            current_selectedTag = 0;
+            current_tagColor = StrToRGB( document.getElementById("colorShow-0").style.background );
+            isTagActive = true;
+        } else {
+            // Change the current tag color and selected Id so it let other tags label as well
+            current_selectedTag = tagId;
+            current_tagColor = tagColor;
+        }
+    }
+}
+
+// TODO here would go the color conversion functions if they are needed
+
+/* THREE.JS FUNCTIONALLITY */
+
+// Resizes the renderer to its canvas size
+function resizeCanvas() {
+    const canvas = renderer.domElement;
+    // Get the size of the canvas
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+
+    // adjust the renderer to the canvas
+    if (canvas.width !== width || canvas.height !== height) {
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        controls.update();  // Updates the arcball, just in case
+    }
+}
+
+// Resets the camera to its original position, angle and zoom (works perfectly and fast)
+function resetCamera() {
+    controls.reset();       // Resets controls so they work fine
+    positionCamera(pcBoundingBox);
+    controls.update();
+    camera.rotation.set(0, 0, 0);
+}
+
+// TODO ADAPT THIS FUNCTION SO IT NOW CHANGES THE TYPE OF MAP DISPLAYED
+// Change the visualizer mode. Right now -> 0: default, 1: locked, 2: panning, 3: rotate, 4: zooming TODO change numbers for an ENUM
+function changeVisualizerMode(newMode) {
+    if ( current_mode == newMode ) {
+        current_mode = 0;   // Set it to default controls
+        setControlsParams( true, true, true, true );
+        // Checks if the controls are by default, or inverted
+        if ( !isBindInverted )
+            setTBMouseControl( "default" );
+        else
+            setTBMouseControl( "inverted" );
+
+        document.getElementById( "canvasThree" ).style.cursor = "default";
+        if ( current_modelIcon != null ) {
+            current_modelIcon.style.opacity = 1;
+            current_modelIcon.style.removeProperty( 'background-color' );
+            current_modelIcon = null;
+        }
+    } else {
+        current_mode = newMode;
+        if ( !isBindInverted )
+            setTBMouseControl( "default" );
+        else
+            setTBMouseControl( "inverted" );
+        if ( current_modelIcon != null ) {    // Reset active effect of the active mode
+            current_modelIcon.style.opacity = 1;
+            current_modelIcon.style.removeProperty( 'background-color' );
+        }
+        switch ( current_mode ) {
+            case 0:
+                // Default mode
+                setControlsParams( true, true, true, true );
+                document.getElementById( "canvasThree" ).style.cursor = "default";
+                current_modelIcon = null;
+                break;
+            case 1:
+                // Select or Locked mode
+                setControlsParams( false, true, true, true );
+                document.getElementById( "canvasThree" ).style.cursor = "crosshair";
+                current_modelIcon = document.getElementById( "lockIcon" );
+                break;
+            case 2:
+                // Pan mode. Changes cursor to movement cursos
+                setControlsParams( true, true, false, false );
+                setTBMouseControl("pan");
+                document.getElementById( "canvasThree" ).style.cursor = "all-scroll";
+                current_modelIcon = document.getElementById( "movementIcon" );
+                break;
+            case 3:
+                // Rotate mode
+                setControlsParams( true, false, true, false );
+                setTBMouseControl("rotate")
+                document.getElementById( "canvasThree" ).style.cursor = "grab";
+                current_modelIcon = document.getElementById( "rotateIcon" );
+                break;
+            case 4:
+                // Zoom mode
+                setControlsParams( true, false, false, true );
+                document.getElementById( "canvasThree" ).style.cursor = "zoom-in";
+                current_modelIcon = null;
+                break;
+            default:
+                // Control for any unexpected values, set the visualizer to default
+                setControlsParams( true, true, true, true );
+                current_mode = 0;
+                current_modelIcon = null;
+                break;
+        }
+        // Sets the active one to opacity 0.6, as an active effect (TODO CHANGE THIS TO CHANGE COLOR OF ICON)
+        if ( current_modelIcon != null )
+            current_modelIcon.style.backgroundColor = '#63a2ff';
+    }
+}
+
+// Function that displays the loading icon, for long executions
+function startLoadIcon() {
+    // Lock flag to check the user doesnt missbehave while loading
+    is_loading = true;
+    // Shows the loading icon
+    loadBack.style.display = "block";
+    loadIcon.style.display = "block";
+    // Starts the loading icon rotation
+    loadingTimer = setInterval( showLoading, 1 );
+}
+
+// Stops the loading corroutine
+function stopLoadIcon() {
+    clearInterval( loadingTimer );
+    is_loading = false;
+    loadRotation = 0;
+    loadIcon.style.transform = "rotate(0)";
+    loadIcon.style.display = "none";
+    loadBack.style.display = "none";
+}
+
+// Corroutine that rotates the loading button
+function showLoading() {
+    loadIcon.style.transform = "rotate(" + loadRotation + "deg)";
+    loadRotation++;
+    if (loadRotation >= 360)
+        loadRotation = 0;
+}
+
+// Reloads the app to its starting point (index)
+function goToIndex() {
+    location.replace("http://127.0.0.1:8000/")
+}

@@ -13,3 +13,10 @@ export function getCookie(name) {
     }
     return cookieValue;
 }
+
+// Counts the number of elements as received in the array received
+export function countElement( array, element ) {
+    // Filters by the element value, and gets the length of the result array
+    return array.filter(
+        (item) => item == element).length; 
+}
