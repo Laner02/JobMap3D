@@ -1,39 +1,118 @@
-{% load static %}
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <link rel="stylesheet" href="{% static 'output.css' %}">
-        <title>Job Map 3D</title>
-        <!-- ImportMap for the browser to install the JS libraries of Three.js -->
-        <script type="importmap">
-            {
-              "imports": {
-                "three": "../assets/three/build/three.module.js",
-                "three/addons/": "../assets/three/examples/jsm/"
-              }
-            }
-        </script>
-    </head>
-    <body>
-        <!-- TODO do we need shaders here? -->
-        {% block topbar %}
-        <div id="topbar-container">
-            <header class="flex-col grid grid-cols-[0.2fr,0.6fr,0.2fr] items-center text-semibold text-gray-200 h-16 ml-4 mr-3 text-xl border-b shadow-md">
-                <span id="app-title" class="flex h-full w-full items-center justify-start">JOB MAP 3D</span>
-                <div id="searchbar" class="flex items-center justify-center mx-2 my-1">
-                    <div class="border rounded-full inset-shadow-sm">
-                        <span class="text-gray-200 text-md">Busca un empleo, localidad...</span>
-                        <!-- TODO meter aqui svg de la lupa-->
-                    </div>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAPA EMPLEO</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f8f8;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        input[type="text"] {
+            flex: 1;
+            margin: 0 150px;
+            padding: 5px;
+        }
+        main {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            overflow: hidden;
+        }
+        aside {
+            width: 250px;
+            height: 100%;
+            padding: 20px;
+            background: #f0f0f0;
+            border-right: 1px solid #ddd;
+        }
+        .map-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #eaeaea;
+            padding: 20px;
+        }
+        .map {
+            position: relative;
+        }
+        .map img {
+            width: 100%;
+            max-width: 600px;
+        }
+        .bar {
+            position: absolute;
+            background: blue;
+            color: white;
+            text-align: center;
+            width: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .viewerContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 style="margin-left: 35px;">MAPA EMPLEO</h1>
+        <input type="text" placeholder="Busca un empleo, localidad...">
+    </header>
+    <main>
+        <aside>
+            <h3>Zoom</h3>
+            <input type="range" min="1" max="10" step="1">
+            <h3>Filtros</h3>
+            <ul>
+                <li><input type="checkbox"> Ofertas empleo</li>
+                <li><input type="checkbox"> # Empleados</li>
+                <li><input type="checkbox"> # Afiliados Seg. Social</li>
+                <li><input type="checkbox"> Nuevos contratos / año</li>
+                <li><input type="checkbox"> Cese contratos / año</li>
+                <li><input type="checkbox"> Nuevos cntr. temp. / año</li>
+                <li><input type="checkbox"> Cese cntr. temp. / año</li>
+            </ul>
+            <h3>Mapa</h3>
+            <ul>
+                <li>Mapa frecuencias</li>
+                <li>Mapa crecimiento empleo</li>
+                <li>Mapa provincias</li>
+            </ul>
+        </aside>
+        <section class="map-container">
+            <div class="map">
+                <div id="viewerContainer" class="viewerContainer">
+                    <canvas id="canvasThree" style="display: block; width: 100%; height: 100%; touch-action: none;"></canvas>
                 </div>
-                <span></span>
-            </header>
-        </div>
-        {% endblock %}
-
-
-        <script src="{% static 'main.bundle.js' %}"></script>
-    </body>
+            </div>
+        </section>
+        <!-- TODO Make the loading feature -->
+        <div id="loadingPanel" class="loadingPanel"></div>
+        <div id="modelTutorialImg" class="startModelImage"></div>
+    </main>
+</body>
 </html>
