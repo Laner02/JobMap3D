@@ -1,6 +1,6 @@
 // Main javascript file, prob better just making one file and setting all visualizer on here? Or make it pretty by creating more classes
 
-import { getCookie } from "../assets/utilities";
+// import { getCookie } from "../assets/utilities";
 
 //#region Imports
 //import * as THREE from 'three';
@@ -185,7 +185,7 @@ const controls = new THREE.OrbitControls( camera, renderer.domElement);
 // TODO TODO ANTES DE CREAR EL MODELO, OBTENER LOS DATOS DEL SERVIDOR
 
 // Creates the Castilla y Leon 3D model
-const loader = new THREE.STLLoader();
+/* const loader = new THREE.STLLoader();
 loader.load('/jobmapweb/static/cylRelieve.stl', function (geometry) {
     // Crear material y malla
     const material = new THREE.MeshStandardMaterial({ color: 0x0077ff, metalness: 0.5, roughness: 0.5 });
@@ -222,8 +222,52 @@ loader.load('/jobmapweb/static/cylRelieve.stl', function (geometry) {
 
     marker.position.set(coords.x, coords.y, coords.z);
     scene.add(marker);
+  }); */
+
+fetch('/jobmapweb/static/castilla_y_leon.geojson')
+.then(response => {
+    if (!response.ok) {
+        throw new Error('Error al cargar el archivo GeoJSON');
+    }
+    
+    return response.json();
+})
+.then(data => {
+    const geometria = new THREE.BufferGeometry();
+    const vertices = [];
+
+    data.features.forEach(feature => {
+    const coords = feature.geometry.coordinates;
+
+    // Asumiendo que son Polígonos:
+    coords[0].forEach(coord => {
+      const [long, lat] = coord; // Coordenadas GeoJSON (lon, lat)
+      const x = long; // Transforma según sea necesario
+      const y = lat;  // Transforma según sea necesario
+      vertices.push(x, y, 0); // Z=0, se puede ajustar
+    });
+
+    // Agregar los vértices al BufferGeometry
+    geometria.setAttribute(
+        'position',
+        new THREE.Float32BufferAttribute(vertices, 3)
+    );
+  });
+
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x00ff00,
+    side: THREE.DoubleSide,
   });
   
+  const malla = new THREE.Mesh(geometria, material);
+
+  scene.add(malla);
+})
+.catch(error => {
+    console.error('Error:', error);
+});
+
+
 // Centramos la camara inicial para que se contemple correctamente el mapa
 camera.position.set(-1, -2, 10);
 
