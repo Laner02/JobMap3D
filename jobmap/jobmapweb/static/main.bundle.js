@@ -233,43 +233,74 @@ fetch('/jobmapweb/static/castilla_y_leon.geojson')
     return response.json();
 })
 .then(data => {
-    const geometria = new THREE.BufferGeometry();
-    const vertices = [];
-
-    data.features.forEach(feature => {
-    const coords = feature.geometry.coordinates;
-
-    // Asumiendo que son Polígonos:
-    coords[0].forEach(coord => {
-      const [long, lat] = coord; // Coordenadas GeoJSON (lon, lat)
-      const x = long; // Transforma según sea necesario
-      const y = lat;  // Transforma según sea necesario
-      vertices.push(x, y, 0); // Z=0, se puede ajustar
-    });
-
-    // Agregar los vértices al BufferGeometry
-    geometria.setAttribute(
-        'position',
-        new THREE.Float32BufferAttribute(vertices, 3)
-    );
-  });
-
-  const material = new THREE.MeshBasicMaterial({
-    color: 0x00ff00,
-    side: THREE.DoubleSide,
-  });
-  
-  const malla = new THREE.Mesh(geometria, material);
-
-  scene.add(malla);
+    //const geometria = new THREE.BufferGeometry();
+    //const vertices = [];
+    
+      data.features.forEach((feature) => {
+        const { geometry } = feature;
+        
+        if (geometry.type === "Polygon") {
+            // Procesar un polígono
+            addPolygonToScene(geometry.coordinates);
+          } else if (geometry.type === "MultiPolygon") {
+            // Procesar un multipolígono (varios conjuntos de coordenadas)
+            geometry.coordinates.forEach((polygon) => {
+              addPolygonToScene(polygon); // Añadir cada polígono
+            });
+          }
+      });
 })
 .catch(error => {
     console.error('Error:', error);
 });
 
+function addPolygonToScene(coordinates) {
+    
+    const edgeMaterial = new THREE.LineBasicMaterial({
+        color: 0x000000, // Color negro para los bordes
+        linewidth: 1 // Grosor de la línea (puede variar según el navegador)
+      });
 
+      const material = new THREE.MeshPhongMaterial({
+        color: 0x87ceeb, // Azul suave (Hexadecimal para SkyBlue)
+        side: THREE.DoubleSide, // Renderizado en ambos lados
+        flatShading: true // Sombreado plano para resaltar bordes
+      });
+
+    coordinates.forEach((ring) => {
+      const shape = new THREE.Shape();
+  
+      ring.forEach(([x, y], index) => {
+        if (index === 0) {
+          shape.moveTo(x, y); // Primer punto
+        } else {
+          shape.lineTo(x, y); // Puntos siguientes
+        }
+      });
+  
+      // Configurar extrusión (grosor en el eje Z)
+      const extrudeSettings = {
+        depth: 1, // Grosor en el eje Z
+        bevelEnabled: false // Sin biseles
+      };
+  
+      // Crear geometría extruida
+      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  
+      // Crear malla
+      const mesh = new THREE.Mesh(geometry, material);
+  
+      // Añadir malla a la escena
+      scene.add(mesh);
+
+      // Crear los bordes visibles
+        const edges = new THREE.EdgesGeometry(geometry); // Generar geometría de bordes
+        const line = new THREE.LineSegments(edges, edgeMaterial); // Aplicar material a los bordes
+        scene.add(line);
+    });
+  }
 // Centramos la camara inicial para que se contemple correctamente el mapa
-camera.position.set(-1, -2, 10);
+camera.position.set(10, 40, 10);
 
 // Sets the raycaster for mouse interactions
 // The Points.threshold is like """the size of the raycast""". Its actually how the raycast detects the sphere computed by the points class but yeag
@@ -333,27 +364,12 @@ window.onload = function() {
         e.stopPropagation()
     })
 
-    // TODO just as an example of dialog windows management
-    /* IMPORT MENU */
-    // Shows Import pointcloud menu popup onclick
-    document.getElementById( "importPC" ).addEventListener( 'click', (e) => {
-        showBlackout()
-        // isUserInPopup = true;   // TODO this should go into the show and hide popup methods
-        document.getElementById( "importFilePopup" ).style.display = "block";
-    })
-
-    // Closes the import menu popup on cancel button click
-    document.getElementById( "importPCclose" ).addEventListener( 'click', (e) => {
-        closeImportMenu()
-        e.stopPropagation()
-    })
-
     // TODO is this needed?
 
     // Saves the loading icon, for optimization
     loadIcon = document.getElementById( "loadIcon" );
     loadBack = document.getElementById( "loadBack" );
-    loadBack.style.display = "none";
+    //loadBack.style.display = "none";
 
     // Hides the loading screen panel
     document.getElementById( "loadingPanel" ).style.display = "none";
