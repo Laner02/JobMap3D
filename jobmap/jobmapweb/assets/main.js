@@ -1,10 +1,10 @@
 // Main javascript file, prob better just making one file and setting all visualizer on here? Or make it pretty by creating more classes
 
 //#region Imports
-import * as THREE from 'three';
-import WebGL from 'three/addons/capabilities/WebGL.js';                         // WebGL compatibility
+//import * as THREE from 'three';
+//import WebGL from 'three/addons/capabilities/WebGL.js';                         // WebGL compatibility
 import { ArcballControls } from 'three/addons/controls/ArcballControls.js';     // Arcball Controls
-import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
+//import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { getCookie, countElement } from './utilities.js';                                     // Utilities exportable functions
 //#endregion
 
@@ -181,7 +181,17 @@ controls.saveState();
 color_list_db = initilaizeTagDBArray();
 
 // Creates the Castilla y Leon 3D model
-createModel();
+const loader = new THREE.STLLoader();
+loader.load('castilla_leon.stl', function (geometry) {
+    // Crear material y malla
+    const material = new THREE.MeshStandardMaterial({ color: 0x0077ff, metalness: 0.5, roughness: 0.5 });
+    const mesh = new THREE.Mesh(geometry, material);
+
+    // Escalar el modelo si es necesario
+    mesh.scale.set(0.1, 0.1, 0.1); // Ajusta la escala según sea necesario
+    mesh.rotation.x = -Math.PI / 2; // Rotar para que quede horizontal
+    scene.add(mesh);
+});
 
 // Sets the raycaster for mouse interactions
 // The Points.threshold is like """the size of the raycast""". Its actually how the raycast detects the sphere computed by the points class but yeag
@@ -428,6 +438,7 @@ function positionCamera( boundingBox ) {
 // Renders the scene on runtime, detecting interactions with pointclouds
 function render() {
     // TODO Here code what happens each frame, code here the raycasting functionality
+    renderer.render(scene, camera);
 }
 
 // Locates the point with the id received and returns a Vector3 with its position. Saves accessing attributes.

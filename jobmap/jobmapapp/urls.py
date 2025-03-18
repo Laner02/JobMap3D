@@ -35,4 +35,7 @@ def _static_butler(request, path, **kwargs):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
+    path('query_ofertas/', views.query_ofertas, name='query_ofertas'),
+    path('query_paro/', views.query_paro, name='query_paro'),
+    path('query_contratos/', views.query_contratos, name='query_contratos'),
 ]

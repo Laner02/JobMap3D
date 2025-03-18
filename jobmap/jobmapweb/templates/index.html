@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -78,6 +79,12 @@
     </style>
 </head>
 <body>
+    <!-- Prueba a cargar Three.js y STL loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/WebGL.js"></script>
+
     <header>
         <h1 style="margin-left: 35px;">MAPA EMPLEO</h1>
         <input type="text" placeholder="Busca un empleo, localidad...">
@@ -114,5 +121,6 @@
         <div id="loadingPanel" class="loadingPanel"></div>
         <div id="modelTutorialImg" class="startModelImage"></div>
     </main>
+    <script src="{% static 'main.bundle.js' %}"></script>
 </body>
 </html>
