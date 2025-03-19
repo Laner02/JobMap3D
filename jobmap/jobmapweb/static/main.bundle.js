@@ -14,6 +14,8 @@
 // To be able to actually display smth with three.js, we need 3 things: camera, scene and renderer
 /* SCENE */
 const scene = new THREE.Scene();                    // Create a scene
+const floader = new THREE.FontLoader();
+
 scene.background = new THREE.Color( 0xdbdbd9 );     // Sets the scene background
 
 /* CAMERA */
@@ -302,10 +304,10 @@ function addPolygonToScene(coordinates) {
 // Centramos la camara inicial para que se contemple correctamente el mapa
 camera.position.set(10, 40, 10);
 
+// Inicialmente se muestran las ofertas de empleo, al clickar el mapa, se esconden estas y se muestra otros datos
+fetchOfertasEmpleo();
+
 // Sets the raycaster for mouse interactions
-// The Points.threshold is like """the size of the raycast""". Its actually how the raycast detects the sphere computed by the points class but yeag
-// As the threshold is the precision, if its too precise, it might affect the performance
-// Create Raycasts, and mouse position
 raycaster = new THREE.Raycaster();
 raycaster.params.Points.threshold = 0.1;    // Raycasters for points need an specific threshold for the precision
 pointer = new THREE.Vector2();
@@ -399,72 +401,264 @@ animate();
 /* AUX FUNCTIONS */
 // Function that gets the data from the CyL database async by calling the python view
 function fetchOfertasEmpleo() {
-  fetch("query_ofertas/", {
-    method: "GET",
-    headers: {
-      "X-Requested-With": "XMLHttpRequest",
-      "X-CSRFToken": getCookie("csrftoken"),
-    },
+  fetch('/jobmapweb/static/ofertas-de-empleo.geojson')
+  .then(response => {
+      if (!response.ok) {
+          throw new Error('Error al cargar el archivo GeoJSON de ofertas de empleo');
+      }
+      
+      return response.json();
   })
-  .then( response => response.json() )
-  .then( data => {
-    // Aqui recibimos los datos de empleo en un JSON
+  .then(data => {
+    // TODO METER TODOS LOS PUNTOS EN UN GRUPO DE PUNTOS CON NOMBRE EMPLEO, Y ESCONDERLO SI SE CAMBIA DE MAPA
 
-    // TODO tratar aqui los datos y mostrarlos en su lugar en nuestro mapa
+    // Procesamiento del geojson
+    const localidades = {};
+      
+    data.features.forEach((feature) => {
+      // Si el punto son los creditos finales, los salta
+      if (!feature.geometry)
+        return;
 
+      const localidad = feature.properties.localidad;
+      const [lon, lat] = feature.geometry.coordinates;
 
-  } )
+      // Si la localidad no estaba en la lista, se añade
+      if (!localidades[localidad])
+        localidades[localidad] = { count: 0, sumX: 0, sumY: 0 };
+      
+      // Se añaden los datos de la localidad actual al vector
+      localidades[localidad].count++;
+      localidades[localidad].sumX += lon;
+      localidades[localidad].sumY += lat;
+    });
+
+    // Calculo de las coordenadas medias de cada localidad
+    const coordsmedias = Object.keys(localidades).map(localidad => {
+      const { cnt, sumX, sumY } = localidades[localidad];
+      return {
+        localidad,
+        coords: [sumX/cnt, sumY/cnt],
+        frecuencia: cnt
+      }
+    });
+
+    // Representa cada localidad y su frecuencia en el mapa
+    coordsmedias.forEach(coord => {
+      // Punto para mostrar la localidad
+      const geometria = new THREE.SphereGeometry(0.05, 32, 32);
+      const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const puntoMesh = new THREE.Mesh(geometria, material);
+
+      // Situa el punto
+      puntoMesh.position.set(coord.coords[0], coord.coords[1], 0);
+      scene.add(puntoMesh);
+
+      // Etiqueta de la localidad y su frecuencia
+      floader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const textGeometry = new THREE.TextGeometry(`Localidad: ${coord.localidad}\nFrecuencia: ${coord.frecuencia}`, {
+            font: font,
+            size: 1,
+            height: 0.2,
+        });
+    
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        textMesh.position.set(coord.coords[0], coord.coords[1], 0);
+        scene.add(textMesh);
+        console.log(textMesh)
+      });
+    
+    })
+  })
   .catch( error => {
     console.log("[JobMap3D] Ha ocurrido un error obteniendo las ofertas de empleo.")
     console.log(error);
   });
 }
 
-// Función que obtiene los datos de paro de la BD de CyL
+// Función que obtiene los datos de paro de la BD de CyL EN 2025
 function fetchParo() {
-  fetch("query_paro/", {
-    method: "GET",
-    headers: {
-      "X-Requested-With": "XMLHttpRequest",
-      "X-CSRFToken": getCookie("csrftoken"),
-    },
+  fetch('/jobmapweb/static/paro-provincias.geojson')
+  .then(response => {
+      if (!response.ok) {
+          throw new Error('Error al cargar el archivo GeoJSON de estadísticas de paro');
+      }
+      
+      return response.json();
   })
-  .then( response => response.json() )
-  .then( data => {
-    // Aqui recibimos los datos de paro en un JSON
+  .then(data => {
+    // TODO METER TODOS LOS PUNTOS EN UN GRUPO DE PUNTOS CON NOMBRE EMPLEO, Y ESCONDERLO SI SE CAMBIA DE MAPA
 
-    // TODO tratar aqui los datos y mostrarlos en su lugar en nuestro mapa
+    // Procesamiento del geojson
+    const provincias = {};
+    
+    data.features.forEach((feature) => {
+      // Si el punto son los creditos finales, los salta
+      if (!feature.geometry)
+        return;
 
+      const provincia = feature.properties.nombre_territorio;
+      const [lon, lat] = feature.geometry.coordinates;
 
-  } )
+      // TODO podemos añadir también filtros por fecha o filtros por edades
+      
+      // Si el registro no es del año adecuado se salta
+      if (feature.properties.fecha.startsWith('2025-'))
+      {
+        // Si la provincia no estaba en la lista, se añade
+        if (!provincias[provincia])
+          provincias[provincia] = { cnt: 0, total: 0, mujeres: 0, varones: 0, sumX: 0, sumY: 0 };
+        
+        // Se añaden los datos de la provincia actual al vector
+        provincias[provincia].cnt++;
+        provincias[provincia].sumX += lon;
+        provincias[provincia].sumY += lat;
+        provincias[provincia].total += feature.properties.total;
+        provincias[provincia].mujeres += feature.properties.mujer;
+        provincias[provincia].varones += feature.properties.varon;
+      }
+
+    });
+
+    // Calculo de las coordenadas medias de cada provincia
+    const coordsmedias = Object.keys(provincias).map(provincia => {
+      const { cnt, sumX, sumY } = provincias[provincia];  // Esto se pilla bien?
+      // TODO eliminar
+      console.log(cnt)
+      console.log(sumX)
+      console.log(sumY)
+      return {
+        provincia,
+        coords: [sumX/cnt, sumY/cnt],
+        total: provincias[provincia].total,
+        mujeres: provincias[provincia].mujeres,
+        varones: provincias[provincia].varones
+      }
+    });
+
+    // Representa cada localidad y su frecuencia en el mapa
+    coordsmedias.forEach(coord => {
+      // Punto para mostrar la localidad
+      const geometria = new THREE.SphereGeometry(0.05, 32, 32);
+      const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const puntoMesh = new THREE.Mesh(geometria, material);
+
+      // Situa el punto
+      puntoMesh.position.set(coord.coords[0], coord.coords[1], 0);
+      scene.add(puntoMesh);
+
+      // Etiqueta de la localidad y su frecuencia de paro
+      floader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const textGeometry = new THREE.TextGeometry(`Provincia: ${coord.provincia}\nTotal: ${coord.total}\nVaron: ${coord.varones} Mujer: ${coord.mujeres}`, {
+            font: font,
+            size: 1,
+            height: 0.2,
+        });
+    
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        textMesh.position.set(coord.coords[0], coord.coords[1], 0);
+        scene.add(textMesh);
+      });
+    
+    })
+  })
   .catch( error => {
-    console.log("[JobMap3D] Ha ocurrido un error obteniendo los datos sobre paro.")
+    console.log("[JobMap3D] Ha ocurrido un error obteniendo las estadísticas de paro.")
     console.log(error);
   });
 }
+
 
 // Función que obtiene los datos de los contratos realizados en CyL
 function fetchContratos() {
-  fetch("query_contratos/", {
-    method: "GET",
-    headers: {
-      "X-Requested-With": "XMLHttpRequest",
-      "X-CSRFToken": getCookie("csrftoken"),
-    },
+  fetch('/jobmapweb/static/contratos-realizados.geojson')
+  .then(response => {
+      if (!response.ok) {
+          throw new Error('Error al cargar el archivo GeoJSON de contratos.');
+      }
+      
+      return response.json();
   })
-  .then( response => response.json() )
-  .then( data => {
-    // Aqui recibimos los datos de contratos en un JSON
+  .then(data => {
+    // TODO METER TODOS LOS PUNTOS EN UN GRUPO DE PUNTOS CON NOMBRE EMPLEO, Y ESCONDERLO SI SE CAMBIA DE MAPA
 
-    // TODO tratar aqui los datos y mostrarlos en su lugar en nuestro mapa
+    // Procesamiento del geojson
+    const provincias = {};
+      
+    data.features.forEach((feature) => {
+      // Si el punto son los creditos finales, los salta
+      if (!feature.geometry)
+        return;
 
+      const provincia = feature.properties.nombre_territorio;
+      const [lon, lat] = feature.geometry.coordinates;
 
-  } )
+      // TODO podemos añadir también filtros por fecha o filtros por edades
+      
+      // Si el registro no es del año adecuado se salta
+      if (feature.properties.fecha.startsWith('2025-'))
+      {
+        // Si la provincia no estaba en la lista, se añade
+        if (!provincias[provincia])
+          provincias[provincia] = { cnt: 0, total: 0, indefinido: 0, temporal: 0, sumX: 0, sumY: 0 };
+        
+        // Se añaden los datos de la provincia actual al vector
+        provincias[provincia].cnt++;
+        provincias[provincia].sumX += lon;
+        provincias[provincia].sumY += lat;
+        provincias[provincia].total += feature.properties.total;
+        provincias[provincia].indefinido += feature.properties.indefinido;
+        provincias[provincia].temporal += feature.properties.temporal;
+      }
+    });
+
+    // Calculo de las coordenadas medias de cada localidad
+    const coordsmedias = Object.keys(provincias).map(provincia => {
+      const { cnt, sumX, sumY } = provincias[provincia];
+      return {
+        provincia,
+        coords: [sumX/cnt, sumY/cnt],
+        total: provincias[provincia].total,
+        indefinido: provincias[provincia].indefinido,
+        temporal: provincias[provincia].temporal
+      }
+    });
+
+    // Representa cada provincia y su frecuencia en el mapa
+    coordsmedias.forEach(coord => {
+      // Punto para mostrar la provincia
+      const geometria = new THREE.SphereGeometry(0.05, 32, 32);
+      const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const puntoMesh = new THREE.Mesh(geometria, material);
+
+      // Situa el punto
+      puntoMesh.position.set(coord.coords[0], coord.coords[1], 0);
+      scene.add(puntoMesh);
+
+      // Etiqueta de la provincia y su tasa de contratos
+      floader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const textGeometry = new THREE.TextGeometry(`Provincia: ${coord.provincia}\nTotal: ${coord.total}\nIndefinido: ${coord.indefinido} Temporal: ${coord.temporal}`, {
+            font: font,
+            size: 1,
+            height: 0.2,
+        });
+    
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        textMesh.position.set(coord.coords[0], coord.coords[1], 0);
+        scene.add(textMesh);
+      });
+    
+    })
+  })
   .catch( error => {
-    console.log("[JobMap3D] Ha ocurrido un error obteniendo los datos de contratos.")
+    console.log("[JobMap3D] Ha ocurrido un error obteniendo los datos de contratos realizados.")
     console.log(error);
   });
 }
+
 
 // TODO Use this function to make the camera look at the middle of the model when its created or reseted
 // Positions the camera near the map model, and looks at it

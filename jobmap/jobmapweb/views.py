@@ -27,9 +27,9 @@ def index(request: HttpRequest) -> HttpResponse:
 # TODO hacer que dependiendo de los filtros se llame a una u otra vista
 # Funcion que obtiene los datos de ofertas de empleo de la BD de CyL. Al completo
 def query_ofertas(request: HttpRequest) -> JsonResponse:
-    # TODO descargar el JSON en la API:
-    query = "/api/explore/v2.1/catalog/datasets/ofertas-de-empleo/records?select=count(*)&group_by=localidad&limit=100"
-    pass
+    path = 'static/ofertas-de-empleo.geojson'
+
+    
 
 # Obtiene las localidades disponibles y la frecuencia entre ellas
 # TODO hacer que esto devuelva un JSON con la localidad y la frecuencia
