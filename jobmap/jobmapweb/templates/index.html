@@ -97,7 +97,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.153.0/examples/js/geometries/TextGeometry.js"></script>
     <script src="{% static 'utilities.js' %}"></script>
 
-    <header class="flex shadow-xl">
+    <header class="flex border-b-black">
         <div id="appLogo" style="margin-left: 35px;" class="flex text-xl font-bold w-[20%]">MAPA EMPLEO</div>        
         <!-- Barra de busqueda -->
         <form class="w-full mx-100">
@@ -242,23 +242,22 @@
             </div>
             <div id="maps" class="flex h-[60%] gap-4 grid grid-rows mb-1">
                 <div class="mb-1 text-lg font-bold">Mapa</div>
-                <button id="map-frec" class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
+                <button id="map-frec" class="bg-sky-300 hover:bg-sky-400 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
                     Mapa político
                 </button>
-                <button id="map-crec" class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
+                <button id="map-crec" class="bg-sky-300 hover:bg-sky-400 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
                     Mapa crecimiento de empleo
                 </button>
             </div>
             <div></div>
         </aside>
         <section class="map-container">
-            <div class="map">
+            <div class="map rounded-xl">
                 <div id="viewerContainer" class="viewerContainer">
                     <canvas id="canvasThree" style="display: block; width: 100%; height: 100%; touch-action: none;"></canvas>
                 </div>
             </div>
         </section>
-        <!-- TODO Make the loading feature -->
         <div id="loadingPanel" class="loadingPanel"></div>
         <div id="modelTutorialImg" class="startModelImage"></div>
     </main>

@@ -1,4 +1,3 @@
-
 //#region Variables
 // To be able to actually display smth with three.js, we need 3 things: camera, scene and renderer
 /* SCENE */
@@ -28,24 +27,8 @@ grupoParo.visible = false;
 let grupoContratos = new THREE.Group();       // Grupo para los elementos de contratos
 grupoContratos.visible = false;
 
-/* RAYCAST */
-let raycaster, intersects;
-let drawRay;
-let vectorRaycast, vIntersects;             // Raycast for the vector tool
-let vectorStartingPos;                      // Position of the first point of the vector
-let vectorDirection = new THREE.Vector3();  // vectorRaycast direction
-let vectorFar = new THREE.Vector3();        // vectorRaycast max reach
-const RAYCASTER_OG_SIZE = 0.1;              // Default raycaster size
-let vRaycasterSize = 0.5;                   // Vector raycast size, to make the line bigger or smaller in size
-let bRaycasterSize = 0.5;                   // Mouse raycast size, to make it select various points at once with the brush tool, select everyone inside intersects
-
 /* MOUSE POINTER */
-let pointer, INTERSECTED;
-
-/* Show/Hide Points & Focus */
-let isTagShown;                 // Array with flags for each tag to check if they are shown or hidden
-let isTagFocused;               // Array with flags for each label to check if its focused
-let is_bbx_hidden;              // Flag to determine when the bounding boxes are hidden or shown
+let pointer;
 
 /* Load Icon Var */
 let is_loading;                                 // Lock flag to assert the user doesnt missbehave while loading time happens
@@ -75,9 +58,9 @@ document.getElementById("viewerContainer").appendChild(renderer.domElement);
 
 /* ORBIT CONTROLS */
 const controls = new THREE.TrackballControls(camera, renderer.domElement);
-controls.panSpeed = 0.5;            // 1 por defecto
-controls.rotateSpeed = 0.3;           // 1 por defecto
-controls.zoomSpeed = 0.3;           // 1 por defecto
+controls.panSpeed = 0.1;            // 0.3 por defecto
+controls.rotateSpeed = 0.2;           // 1 por defecto
+controls.zoomSpeed = 0.1;           // 1.2 por defecto
 controls.screenSpacePanning = false;
 
 //#region Modelado CyL
@@ -97,11 +80,11 @@ fetch('/jobmapweb/static/castilla_y_leon.geojson')
 
       if (geometry.type === "Polygon") {
         // Para procesar un polígono
-        addPolygonToScene(geometry.coordinates, modeloCyL);
+        addPolygonToScene(geometry.coordinates, 'none', modeloCyL);
       } else if (geometry.type === "MultiPolygon") {
         // Para procesar un multipolígono (varios conjuntos de coordenadas)
         geometry.coordinates.forEach((polygon) => {
-          addPolygonToScene(polygon, modeloCyL);
+          addPolygonToScene(polygon, 'none', modeloCyL);
         });
       }
     });
@@ -110,18 +93,37 @@ fetch('/jobmapweb/static/castilla_y_leon.geojson')
     console.error('Error:', error);
   });
 
-function addPolygonToScene(coordinates, group) {
+function addPolygonToScene(coordinates, color, group) {
 
   const edgeMaterial = new THREE.LineBasicMaterial({
     color: 0x000000, // Color negro para los bordes
-    linewidth: 1 // Grosor de la línea (puede variar según el navegador)
+    linewidth: 1 // Grosor de la línea
   });
 
-  const material = new THREE.MeshPhongMaterial({
-    color: 0x87ceeb, // Azul suave (Hexadecimal para SkyBlue)
-    side: THREE.DoubleSide, // Renderizado en ambos lados
-    flatShading: true // Sombreado plano para resaltar bordes
-  });
+  // Se decide el color del modelo
+  let material;
+
+  // Si el mapa no tiene color
+  if (color == 'none')
+  {
+    material = new THREE.MeshPhongMaterial({
+      color: 0x87ceeb,
+      side: THREE.DoubleSide, // Renderizado en ambos lados
+      flatShading: true       // Sombreado plano para resaltar bordes
+    });
+  } else if (color == 'green') {
+    material = new THREE.MeshPhongMaterial({
+      color: 0x77dd77,
+      side: THREE.DoubleSide, // Renderizado en ambos lados
+      flatShading: true       // Sombreado plano para resaltar bordes
+    });    
+  } else {
+    material = new THREE.MeshPhongMaterial({
+      color: 0xff6961,
+      side: THREE.DoubleSide, // Renderizado en ambos lados
+      flatShading: true       // Sombreado plano para resaltar bordes
+    });
+  }
 
   coordinates.forEach((ring) => {
     const shape = new THREE.Shape();
@@ -130,27 +132,26 @@ function addPolygonToScene(coordinates, group) {
       if (index === 0) {
         shape.moveTo(x, y); // Primer punto
       } else {
-        shape.lineTo(x, y); // Puntos siguientes
+        shape.lineTo(x, y);
       }
     });
 
-    // Configurar extrusión (grosor en el eje Z)
+    // Configura la profundidad
     const extrudeSettings = {
       depth: 0.4, // Grosor en el eje Z
-      bevelEnabled: false // Sin biseles
+      bevelEnabled: false
     };
 
-    // Crear geometría extruida
+    // Crea una geometría extruida
     const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
 
-    // Crear malla
     const mesh = new THREE.Mesh(geometry, material);
 
     mesh.position.set(5, -34.5, 30.5)
-    // Añadir malla al grupo del modelo 3D
+    // Añade la malla al grupo del modelo 3D
     group.add(mesh);
 
-    // Crear los bordes visibles
+    // Crea los bordes visibles
     const edges = new THREE.EdgesGeometry(geometry); // Generar geometría de bordes
     const line = new THREE.LineSegments(edges, edgeMaterial); // Aplicar material a los bordes
     line.position.set(5, -34.5, 30.5)
@@ -172,25 +173,135 @@ fetch('/jobmapweb/static/castilla_y_leon.geojson')
   })
   .then(data => {
     ;
+    modeloCrecimientoCyL.visible = false;
     data.features.forEach((feature) => {
       const { geometry } = feature;
+      const nombre_provincia = feature.properties.name;
 
-      // TODO hacer que primero se obtengan los datos de contratos - paro, y si es positivo, verde suave. Si es negativo, rojo suave. Los botones solo cambian el mapa, se pueden seguir viendo las frecuencias
-      // TODO añadir el color en la funcion addpolygon, y reescribirla
-      if (geometry.type === "Polygon") {
-        // Para procesar un polígono
-        addPolygonToScene(geometry.coordinates, modeloCrecimientoCyL);
-      } else if (geometry.type === "MultiPolygon") {
-        // Para procesar un multipolígono (varios conjuntos de coordenadas)
-        geometry.coordinates.forEach((polygon) => {
-          addPolygonToScene(polygon, modeloCrecimientoCyL);
+      fetch('/jobmapweb/static/paro-provincias.geojson')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Error al cargar el archivo GeoJSON de estadísticas de paro');
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Procesamiento del geojson
+        const provincias = {};
+        data.features.forEach((feature) => {
+          // Si el punto son los creditos finales, los salta
+          if (!feature.geometry)
+            return;
+
+          const provincia = feature.properties.nombre_territorio;
+          const [lon, lat] = feature.geometry.coordinates;
+
+          // Si la provincia no estaba en la lista, se añade
+          if (!provincias[provincia])
+            provincias[provincia] = { cnt: 0, total: 0, mujeres: 0, varones: 0, sumX: 0, sumY: 0 };
+
+          // Se añaden los datos de la provincia actual al vector
+          provincias[provincia].cnt++;
+          provincias[provincia].sumX += lon;
+          provincias[provincia].sumY += lat;
+          provincias[provincia].total += feature.properties.total;
+          provincias[provincia].mujeres += feature.properties.mujer;
+          provincias[provincia].varones += feature.properties.varon;
         });
-      }
+
+        // Calculo de la tasa de paro de la provincia
+        const tasa_paro = Object.keys(provincias).map(provincia => {
+
+          // Se busca la provincia deseada
+          if (nombre_provincia == provincia) return provincias[provincia].total;
+
+        });
+
+        fetch('/jobmapweb/static/contratos-realizados.geojson')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Error al cargar el archivo GeoJSON de contratos.');
+          }
+
+          return response.json();
+        })
+        .then(data => {
+          // Procesamiento del geojson
+          const provincias = {};
+          data.features.forEach((feature) => {
+            // Si el punto son los creditos finales, los salta
+            if (!feature.geometry)
+              return;
+
+            const provincia = feature.properties.nombre_territorio;
+            const [lon, lat] = feature.geometry.coordinates;
+        
+            // Si la provincia no estaba en la lista, se añade
+            if (!provincias[provincia])
+              provincias[provincia] = { cnt: 0, total: 0, indefinido: 0, temporal: 0, sumX: 0, sumY: 0 };
+
+            // Se añaden los datos de la provincia actual al vector
+            provincias[provincia].cnt++;
+            provincias[provincia].sumX += lon;
+            provincias[provincia].sumY += lat;
+            provincias[provincia].total += feature.properties.total;
+            provincias[provincia].indefinido += feature.properties.indefinido;
+            provincias[provincia].temporal += feature.properties.temporal;
+          });
+
+          // Calculo de la tasa de nuevos contratos de la provincia
+          const tasa_nuevos_contratos = Object.keys(provincias).map(provincia => {
+            
+            if (nombre_provincia == provincia) return provincias[provincia].total;
+
+          });
+
+          // Ahora ponemos el color al material de la provincia y la añadimos al modelo
+          let color_provincia;
+          console.log((tasa_nuevos_contratos.find(item => typeof item === "number") - tasa_paro.find(item => typeof item === "number")));
+          if ((tasa_nuevos_contratos.find(item => typeof item === "number") - tasa_paro.find(item => typeof item === "number")) >= 0)
+            color_provincia = 'green';
+          else
+            color_provincia = 'red';
+          
+          if (geometry.type === "Polygon") {
+            // Para procesar un polígono
+            addPolygonToScene(geometry.coordinates, color_provincia, modeloCrecimientoCyL);
+          } else if (geometry.type === "MultiPolygon") {
+            // Para procesar un multipolígono (varios conjuntos de coordenadas)
+            geometry.coordinates.forEach((polygon) => {
+              addPolygonToScene(polygon, color_provincia, modeloCrecimientoCyL);
+            });
+          }   
+        })
+        .catch(error => {
+          console.log("[JobMap3D] Ha ocurrido un error obteniendo los datos de contratos realizados.")
+          console.log(error);
+        });
+      })
+      .catch(error => {
+        console.log("[JobMap3D] Ha ocurrido un error obteniendo las estadísticas de paro.")
+        console.log(error);
+      });
     });
   })
   .catch(error => {
     console.error('Error:', error);
   });
+//#endregion
+
+//#region Cambio de mapa
+// Funcion para cambiar el mapa activo al político
+function showPoliticalMap() {
+  hideGrupo(modeloCrecimientoCyL);
+  showGrupo(modeloCyL);
+}
+
+// Funcion para cambiar el mapa activo al de crecimiento de empleo
+function showGrowthMap() {
+  hideGrupo(modeloCyL);
+  showGrupo(modeloCrecimientoCyL);
+}
 //#endregion
 
 // Centramos la camara inicial para que se contemple correctamente el mapa
@@ -199,28 +310,8 @@ camera.position.set(0, 7.9, 33);
 // Inicialmente se muestran las ofertas de empleo, al clickar el mapa, se esconden estas y se muestra otros datos
 fetchOfertasEmpleo();
 
-// Sets the raycaster for mouse interactions
-raycaster = new THREE.Raycaster();
-raycaster.params.Points.threshold = 0.1;    // Raycasters for points need an specific threshold for the precision
 pointer = new THREE.Vector2();
-
 //#region General Events
-window.onkeyup = function (event) {
-  // TODO events that happen when the user stops pressing a key
-}
-
-window.onkeydown = function (event) {
-  // TODO events that happen when the user starts pressing a key
-}
-
-window.onmousedown = function (event) {
-  // TODO events that happen when the user starts pressing a mouse button
-}
-
-window.onmouseup = function (event) {
-  // TODO events that happen when the user stops pressing a mouse button
-}
-
 // On pointer movement, tracks the mouse pointer 2d position
 document.addEventListener('mousemove', (e) => {
   // When the pointer moves, save its coords
@@ -233,12 +324,6 @@ document.addEventListener('mousemove', (e) => {
 document.getElementById("canvasThree").addEventListener('contextmenu', (e) => {
   e.preventDefault()
 });
-
-// TODO for testing purposes only
-// Test function to see whats inside the scene
-function checkScene() {
-  console.log(scene);
-}
 
 //#region ONLOAD Evt Listeners
 /* ONLOAD FUNCTION */
@@ -277,7 +362,9 @@ window.onload = function () {
   const filtro_contrato_3 = document.getElementById("checkbox-box-24");
   const filtro_contrato_4 = document.getElementById("checkbox-box-25");
   const filtro_contrato_5 = document.getElementById("checkbox-box-26");
-  
+  const political_map_button = document.getElementById("map-frec");
+  const growth_map_button = document.getElementById("map-crec");
+
   // Event listeners para los filtros de ofertas
   filtro_oferta.addEventListener('click', (e) => {
     // Cuando se selecciona el filtro
@@ -389,7 +476,9 @@ window.onload = function () {
     e.stopImmediatePropagation();
   })
 
-  // TODO is this needed?
+  // Event listeners para los botones de mapas
+  political_map_button.addEventListener('click', showPoliticalMap );
+  growth_map_button.addEventListener('click', showGrowthMap );
 
   // Saves the loading icon, for optimization
   loadIcon = document.getElementById("loadIcon");
@@ -435,7 +524,6 @@ function showGrupo(grupo) {
 function hideGrupo(grupo) {
   grupo.visible = false;
 }
-
 
 //#region Fetch de ofertas
 /* AUX FUNCTIONS */
@@ -503,6 +591,15 @@ function fetchOfertasEmpleo() {
           cuboMesh.position.set(coord.coords[0] + 5, coord.coords[1] - 34.5 + (coord.frecuencia / 100), 31);
           grupoOfertas.add(cuboMesh);
           
+          // Borde para las frecuencias
+          const edges = new THREE.EdgesGeometry(geometria);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+          const wireframe = new THREE.LineSegments(edges, lineMaterial);
+          
+          // Se posicionan los bordes en la posicion del cubo
+          wireframe.position.copy(cuboMesh.position);
+          grupoOfertas.add(wireframe);
+
           // Etiqueta de la localidad y su frecuencia
           floader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
             const textSprite = createTextSprite(`${coord.localidad}:${coord.frecuencia}`);
@@ -614,6 +711,15 @@ function fetchOfertasEmpleoByFecha(lista_fechas) {
           cuboMesh.position.set(coord.coords[0] + 5, coord.coords[1] - 34.5 + (coord.frecuencia / 100), 31);
           grupoOfertas.add(cuboMesh);
           
+          // Borde para las frecuencias
+          const edges = new THREE.EdgesGeometry(geometria);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+          const wireframe = new THREE.LineSegments(edges, lineMaterial);
+          
+          // Se posicionan los bordes en la posicion del cubo
+          wireframe.position.copy(cuboMesh.position);
+          grupoOfertas.add(wireframe);
+
           // Etiqueta de la localidad y su frecuencia
           floader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
             const textSprite = createTextSprite(`${coord.localidad}:${coord.frecuencia}`);
@@ -704,6 +810,15 @@ function fetchParo() {
           cuboMesh.position.set(coord.coords[0] + 5, coord.coords[1] - 34.5 + (coord.total / 100), 31);
           grupoParo.add(cuboMesh);
           
+          // Borde para las frecuencias
+          const edges = new THREE.EdgesGeometry(geometria);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+          const wireframe = new THREE.LineSegments(edges, lineMaterial);
+          
+          // Se posicionan los bordes en la posicion del cubo
+          wireframe.position.copy(cuboMesh.position);
+          grupoParo.add(wireframe);
+
           // Etiqueta de la localidad y su frecuencia
           floader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
             const textSprite = createTextSprite(`${coord.provincia}:${coord.total}`);
@@ -725,6 +840,7 @@ function fetchParo() {
     });
 }
 //#endregion
+
 //#region Paro con filtros
 function fetchParoByFilter(lista_fechas, filter_type) {
   fetch('/jobmapweb/static/paro-provincias.geojson')
@@ -804,6 +920,15 @@ function fetchParoByFilter(lista_fechas, filter_type) {
           cuboMesh.position.set(coord.coords[0] + 5, coord.coords[1] - 34.5 + (coord.total / 2000000), 31);
           grupoParo.add(cuboMesh);
           
+          // Borde para las frecuencias
+          const edges = new THREE.EdgesGeometry(geometria);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+          const wireframe = new THREE.LineSegments(edges, lineMaterial);
+          
+          // Se posicionan los bordes en la posicion del cubo
+          wireframe.position.copy(cuboMesh.position);
+          grupoParo.add(wireframe);
+
           // Etiqueta de la localidad y su frecuencia
           floader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
             let textSprite;
@@ -916,6 +1041,15 @@ function fetchContratos() {
           cuboMesh.position.set(coord.coords[0] + 5, coord.coords[1] - 34.5 + (coord.total / 100), 31);
           grupoContratos.add(cuboMesh);
           
+          // Borde para las frecuencias
+          const edges = new THREE.EdgesGeometry(geometria);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+          const wireframe = new THREE.LineSegments(edges, lineMaterial);
+          
+          // Se posicionan los bordes en la posicion del cubo
+          wireframe.position.copy(cuboMesh.position);
+          grupoContratos.add(wireframe);
+
           // Etiqueta de la localidad y su frecuencia
           floader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
             const textSprite = createTextSprite(`${coord.provincia}:${coord.total}`);
@@ -938,6 +1072,7 @@ function fetchContratos() {
     });
 }
 //#endregion
+
 //#region Contratos con filtros
 function fetchContratosByFilter(lista_fechas, filter_type) {
   fetch('/jobmapweb/static/contratos-realizados.geojson')
@@ -1009,6 +1144,15 @@ function fetchContratosByFilter(lista_fechas, filter_type) {
           cuboMesh.position.set(coord.coords[0] + 5, coord.coords[1] - 34.5 + (coord.total / 2000000), 31);
           grupoContratos.add(cuboMesh);
           
+          // Borde para las frecuencias
+          const edges = new THREE.EdgesGeometry(geometria);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+          const wireframe = new THREE.LineSegments(edges, lineMaterial);
+          
+          // Se posicionan los bordes en la posicion del cubo
+          wireframe.position.copy(cuboMesh.position);
+          grupoContratos.add(wireframe);
+
           // Etiqueta de la localidad y su frecuencia
           floader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
             let textSprite;
@@ -1042,57 +1186,13 @@ function fetchContratosByFilter(lista_fechas, filter_type) {
 }
 //#endregion
 
-// TODO Use this function to make the camera look at the middle of the model when its created or reseted
 // Positions the camera near the map model, and looks at it
 function positionCamera(boundingBox) {
   const center = boundingBox.getCenter(new THREE.Vector3());
   const radius = boundingBox.getSize(new THREE.Vector3()).length() * 0.5;
   const distance = radius / Math.tan(Math.PI * camera.fov / 360);
   camera.position.set(center.x, center.y, center.z + distance);
-  //controls.target.set( center.x, center.y, center.z );
-  //controls.update()   // Orbit controls update must be called after manual camera changes
 }
-
-// TODO remake this function so it selects and changes the display of the map to a dashboard, geolocation color map, or frequency map.
-function selectMapMode(mapMode) {
-
-  let tagId;
-
-  // If the tag is passed as a string with the id of the HTMLElement
-  if (String(mapMode).includes('-')) {
-    // Gets the color of the tag
-    let tagTmp = mapMode.split('-');
-    tagId = Number(tagTmp[1]);
-  } else {
-    // TODO check first it is a int, if no, alert
-    tagId = Number(mapMode);
-  }
-
-  // Set the current color to the color the tag is associated with
-  let tagColor = StrToRGB(document.getElementById("colorShow-" + tagId).style.background);
-
-  if (!isTagActive) {
-    // sets the new tag id, and color
-    current_selectedTag = tagId;
-    current_tagColor = tagColor;
-
-    isTagActive = true;
-  } else {
-    // If there was an active tag and it was the same as the selected, resets it
-    if (tagColor.toString() == current_tagColor.toString()) {
-      // Reset currentTagColor
-      current_selectedTag = 0;
-      current_tagColor = StrToRGB(document.getElementById("colorShow-0").style.background);
-      isTagActive = true;
-    } else {
-      // Change the current tag color and selected Id so it let other tags label as well
-      current_selectedTag = tagId;
-      current_tagColor = tagColor;
-    }
-  }
-}
-
-// TODO here would go the color conversion functions if they are needed
 
 /* THREE.JS FUNCTIONALLITY */
 
@@ -1109,80 +1209,6 @@ function resizeCanvas() {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     //controls.update();  // Updates the arcball, just in case
-  }
-}
-
-// TODO ADAPT THIS FUNCTION SO IT NOW CHANGES THE TYPE OF MAP DISPLAYED
-// Change the visualizer mode. Right now -> 0: default, 1: locked, 2: panning, 3: rotate, 4: zooming TODO change numbers for an ENUM
-function changeVisualizerMode(newMode) {
-  if (current_mode == newMode) {
-    current_mode = 0;   // Set it to default controls
-    setControlsParams(true, true, true, true);
-    // Checks if the controls are by default, or inverted
-    if (!isBindInverted)
-      setTBMouseControl("default");
-    else
-      setTBMouseControl("inverted");
-
-    document.getElementById("canvasThree").style.cursor = "default";
-    if (current_modelIcon != null) {
-      current_modelIcon.style.opacity = 1;
-      current_modelIcon.style.removeProperty('background-color');
-      current_modelIcon = null;
-    }
-  } else {
-    current_mode = newMode;
-    if (!isBindInverted)
-      setTBMouseControl("default");
-    else
-      setTBMouseControl("inverted");
-    if (current_modelIcon != null) {    // Reset active effect of the active mode
-      current_modelIcon.style.opacity = 1;
-      current_modelIcon.style.removeProperty('background-color');
-    }
-    switch (current_mode) {
-      case 0:
-        // Default mode
-        setControlsParams(true, true, true, true);
-        document.getElementById("canvasThree").style.cursor = "default";
-        current_modelIcon = null;
-        break;
-      case 1:
-        // Select or Locked mode
-        setControlsParams(false, true, true, true);
-        document.getElementById("canvasThree").style.cursor = "crosshair";
-        current_modelIcon = document.getElementById("lockIcon");
-        break;
-      case 2:
-        // Pan mode. Changes cursor to movement cursos
-        setControlsParams(true, true, false, false);
-        setTBMouseControl("pan");
-        document.getElementById("canvasThree").style.cursor = "all-scroll";
-        current_modelIcon = document.getElementById("movementIcon");
-        break;
-      case 3:
-        // Rotate mode
-        setControlsParams(true, false, true, false);
-        setTBMouseControl("rotate")
-        document.getElementById("canvasThree").style.cursor = "grab";
-        current_modelIcon = document.getElementById("rotateIcon");
-        break;
-      case 4:
-        // Zoom mode
-        setControlsParams(true, false, false, true);
-        document.getElementById("canvasThree").style.cursor = "zoom-in";
-        current_modelIcon = null;
-        break;
-      default:
-        // Control for any unexpected values, set the visualizer to default
-        setControlsParams(true, true, true, true);
-        current_mode = 0;
-        current_modelIcon = null;
-        break;
-    }
-    // Sets the active one to opacity 0.6, as an active effect (TODO CHANGE THIS TO CHANGE COLOR OF ICON)
-    if (current_modelIcon != null)
-      current_modelIcon.style.backgroundColor = '#63a2ff';
   }
 }
 

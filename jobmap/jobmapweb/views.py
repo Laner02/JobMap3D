@@ -17,7 +17,6 @@ def index(request: HttpRequest) -> HttpResponse:
     """
     # Loads the index template
     template = loader.get_template("index.html")
-    # TODO do we need to send some data on the first context?
     context = {}
 
     print('[JOBMAP] Index: Loading index page')
