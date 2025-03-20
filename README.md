@@ -7,7 +7,7 @@ Proyecto de visualizador tridimensional de los datos estadísticos de empleo en 
 La aplicación proporciona un fácil acceso a los datos de empleo mediante representación gráfica en un modelado tridimensional de la topografía de Castilla y León, ofreciendo una visualización intuitiva de los datos.
 
 ## Instalación
-> ![WARNING]
+> [!WARNING]
 > JobMap3D necesita del siguiente software para funcionar.
 
 - Django v12+ link
@@ -21,6 +21,9 @@ Para ejecutar la aplicación, se debe abrir un terminal en el directorio princip
 cd ./jobmap
 python manage.py runserver --noreload
 ```
+Se mostrará una dirección web en el terminal (localhost) desde la que se podrá acceder a la herramienta directamente.
+> [!WARNING]
+> JobMap3D requiere de conexión a internet para descargar de forma dinámica las librerías de THREE.JS
 
 ## Controles
 Se ha añadido la posibilidad de movimiento libre por la escena con los siguientes controles.
