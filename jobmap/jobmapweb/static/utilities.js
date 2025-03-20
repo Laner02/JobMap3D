@@ -1,5 +1,5 @@
 // Exportable function that gets the cookie with the name received from the web cookies. Mainly used for the CSRF cookie
-export function getCookie(name) {
+function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
@@ -12,4 +12,11 @@ export function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+// Counts the number of elements as received in the array received
+function countElement( array, element ) {
+    // Filters by the element value, and gets the length of the result array
+    return array.filter(
+        (item) => item == element).length; 
 }

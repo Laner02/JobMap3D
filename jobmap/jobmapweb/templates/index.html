@@ -1,0 +1,266 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAPA EMPLEO</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f8f8;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        input[type="text"] {
+            flex: 1;
+            margin: 0 150px;
+            padding: 5px;
+        }
+        main {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            overflow: hidden;
+        }
+        aside {
+            width: 250px;
+            height: 100%;
+            padding: 20px;
+            background: #f0f0f0;
+            border-right: 1px solid #ddd;
+        }
+        .map-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #eaeaea;
+            padding: 20px;
+        }
+        .map {
+            position: relative;
+        }
+        .map img {
+            width: 100%;
+            max-width: 600px;
+        }
+        .bar {
+            position: absolute;
+            background: blue;
+            color: white;
+            text-align: center;
+            width: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .viewerContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+        }
+    </style>
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.128/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.128/examples/jsm/"
+          }
+        }
+      </script>
+</head>
+<body>
+    <!-- Prueba a cargar Three.js y STL loader -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/TrackballControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/WebGL.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.153.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.153.0/examples/js/geometries/TextGeometry.js"></script>
+    <script src="{% static 'utilities.js' %}"></script>
+
+    <header class="flex border-b-black">
+        <div id="appLogo" style="margin-left: 35px;" class="flex text-xl font-bold w-[20%]">MAPA EMPLEO</div>        
+        <!-- Barra de busqueda -->
+        <form class="w-full mx-100">
+            <label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Buscar</label>
+            <div class="relative shadow-lg">
+                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                    </svg>
+                </div>
+                <input type="search" id="default-search" class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" placeholder="Busca un empleo, localidad..." required />
+                <button type="submit" class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2">Buscar</button>
+            </div>
+        </form>
+    </header>
+    <main>
+        <aside class="flex h-full grid grid-rows-[0.15fr, 0.15fr,0.6fr]">
+            <div id="filters" class="flex h-[40%] grid grid-rows gap-2 mb-1">
+                <div class="mb-1 text-lg font-bold">Filtros</div>
+                <div id="checkbox-0" class="flex items-center">
+                    <input checked id="checkbox-box-0" type="radio" name="filter-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    <label for="checkbox-box-0" class="ms-2 text-sm font-semibold text-gray-900">Ofertas empleo</label>
+                </div>
+                <div id="subfilters-0" class="flex grid grid-rows">
+                    <div id="checkbox-01" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-01" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-01" class="ms-2 text-sm font-semibold text-gray-900">en 2025</label>
+                    </div>
+                    <div id="checkbox-02" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-02" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-02" class="ms-2 text-sm font-semibold text-gray-900">en 2024</label>
+                    </div>
+                    <div id="checkbox-03" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-03" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-03" class="ms-2 text-sm font-semibold text-gray-900">en 2023</label>
+                    </div>
+                    <div id="checkbox-04" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-04" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-04" class="ms-2 text-sm font-semibold text-gray-900">en 2021</label>
+                    </div>
+                    <div id="checkbox-05" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-05" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-05" class="ms-2 text-sm font-semibold text-gray-900">en 2020</label>
+                    </div>
+                </div>
+                <div id="checkbox-1" class="flex items-center">
+                    <input id="checkbox-box-1" type="radio" name="filter-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    <label for="checkbox-box-1" class="ms-2 text-sm font-semibold text-gray-900">Tasas de paro</label>
+                </div>
+                <div id="subfilters-1" class="flex grid grid-rows">
+                    <div id="checkbox-11" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-11" type="radio" name="paro-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-11" class="ms-2 text-sm font-semibold text-gray-900">Total</label>
+                    </div>
+                    <div id="subfilters-11" class="flex grid grid-rows ml-10">
+                        <div id="checkbox-111" class="flex items-center">
+                            <input id="checkbox-box-111" type="radio" name="paro-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="checkbox-box-111" class="ms-2 text-sm font-semibold text-gray-900">Mujer</label>
+                        </div>
+                        <div id="checkbox-112" class="flex items-center">
+                            <input id="checkbox-box-112" type="radio" name="paro-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="checkbox-box-112" class="ms-2 text-sm font-semibold text-gray-900">Varon</label>
+                        </div>
+                        <div id="checkbox-113" class="flex items-center">
+                            <input id="checkbox-box-113" type="radio" name="paro-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="checkbox-box-113" class="ms-2 text-sm font-semibold text-gray-900">edad &lt;25</label>
+                        </div>
+                        <div id="checkbox-114" class="flex items-center">
+                            <input id="checkbox-box-114" type="radio" name="paro-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="checkbox-box-114" class="ms-2 text-sm font-semibold text-gray-900">edad &gt;25</label>
+                        </div>
+                        <div id="checkbox-115" class="flex items-center">
+                            <input id="checkbox-box-115" type="radio" name="paro-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="checkbox-box-115" class="ms-2 text-sm font-semibold text-gray-900">edad 25-45</label>
+                        </div>
+                        <div id="checkbox-116" class="flex items-center">
+                            <input id="checkbox-box-116" type="radio" name="paro-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="checkbox-box-116" class="ms-2 text-sm font-semibold text-gray-900">edad &gt;45</label>
+                        </div>
+                    </div>
+                    <div id="checkbox-12" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-12" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-12" class="ms-2 text-sm font-semibold text-gray-900">en 2025</label>
+                    </div>
+                    <div id="checkbox-13" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-13" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-13" class="ms-2 text-sm font-semibold text-gray-900">en 2024</label>
+                    </div>
+                    <div id="checkbox-14" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-14" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-14" class="ms-2 text-sm font-semibold text-gray-900">en 2023</label>
+                    </div>
+                    <div id="checkbox-15" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-15" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-15" class="ms-2 text-sm font-semibold text-gray-900">en 2021</label>
+                    </div>
+                    <div id="checkbox-16" class="flex items-center ml-5">
+                        <input checked id="checkbox-box-16" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-16" class="ms-2 text-sm font-semibold text-gray-900">en 2020</label>
+                    </div>
+                </div>
+                <div id="checkbox-2" class="flex items-center">
+                    <input id="checkbox-box-2" type="radio" name="filter-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    <label for="checkbox-box-2" class="ms-2 text-sm font-semibold text-gray-900">Nuevos contratos</label>
+                </div>
+                <div id="checkbox-21" class="flex items-center ml-5">
+                    <input checked id="checkbox-box-21" type="radio" name="contrato-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    <label for="checkbox-box-21" class="ms-2 text-sm font-semibold text-gray-900">Total</label>
+                </div>
+                <div id="subfilters-21" class="flex grid grid-rows ml-10">
+                    <div id="checkbox-211" class="flex items-center">
+                        <input id="checkbox-box-211" type="radio" name="contrato-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-211" class="ms-2 text-sm font-semibold text-gray-900">Indefinido</label>
+                    </div>
+                    <div id="checkbox-212" class="flex items-center">
+                        <input id="checkbox-box-212" type="radio" name="contrato-type" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-212" class="ms-2 text-sm font-semibold text-gray-900">Temporal</label>
+                    </div>
+                </div>
+                <div id="subfilters-22" class="flex grid grid-rows ml-5">
+                    <div id="checkbox-22" class="flex items-center">
+                        <input checked id="checkbox-box-22" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-22" class="ms-2 text-sm font-semibold text-gray-900">en 2025</label>
+                    </div>
+                    <div id="checkbox-23" class="flex items-center">
+                        <input checked id="checkbox-box-23" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-23" class="ms-2 text-sm font-semibold text-gray-900">en 2024</label>
+                    </div>
+                    <div id="checkbox-24" class="flex items-center">
+                        <input checked id="checkbox-box-24" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-24" class="ms-2 text-sm font-semibold text-gray-900">en 2023</label>
+                    </div>
+                    <div id="checkbox-25" class="flex items-center">
+                        <input checked id="checkbox-box-25" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-25" class="ms-2 text-sm font-semibold text-gray-900">en 2021</label>
+                    </div>
+                    <div id="checkbox-26" class="flex items-center">
+                        <input checked id="checkbox-box-26" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="checkbox-box-26" class="ms-2 text-sm font-semibold text-gray-900">en 2020</label>
+                    </div>
+                </div>
+            </div>
+            <div id="maps" class="flex h-[60%] gap-4 grid grid-rows mb-1">
+                <div class="mb-1 text-lg font-bold">Mapa</div>
+                <button id="map-frec" class="bg-sky-300 hover:bg-sky-400 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
+                    Mapa político
+                </button>
+                <button id="map-crec" class="bg-sky-300 hover:bg-sky-400 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
+                    Mapa crecimiento de empleo
+                </button>
+            </div>
+            <div></div>
+        </aside>
+        <section class="map-container">
+            <div class="map rounded-xl">
+                <div id="viewerContainer" class="viewerContainer">
+                    <canvas id="canvasThree" style="display: block; width: 100%; height: 100%; touch-action: none;"></canvas>
+                </div>
+            </div>
+        </section>
+        <div id="loadingPanel" class="loadingPanel"></div>
+        <div id="modelTutorialImg" class="startModelImage"></div>
+    </main>
+    <script src="{% static 'main.bundle.js' %}"></script>
+</body>
+</html>

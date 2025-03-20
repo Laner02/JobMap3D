@@ -1,0 +1,679 @@
+/* MainPage */
+.mainPage {
+    position: relative;
+    width: 1920px;
+    height: 1024px;
+
+    background: #FFFFFF;
+}
+
+/* EMPLEOMAP */
+.logo {
+    position: absolute;
+    width: 200px;
+    height: 39px;
+    left: 23px;
+    top: 20px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 32px;
+    line-height: 39px;
+    /* identical to box height */
+
+    color: #000000;
+}
+
+
+/* Barra busqueda */
+.searchbar {
+    position: absolute;
+    width: 911px;
+    height: 48px;
+    left: 504px;
+    top: 16px;
+}
+
+
+/* Rectangle 1 */
+.searchbarborder {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 889px;
+    height: 39px;
+    left: calc(50% - 889px/2);
+    top: calc(50% - 39px/2 + 0.5px);
+
+    border: 2px solid #9F9F9F;
+    filter: drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.25));
+    border-radius: 100px;
+}
+
+/* Ellipse 1 */
+.searchButton {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 868px;
+    top: 13px;
+
+    border: 2px solid #676767;
+}
+
+/* Line 1 */
+.seachButton1 {
+    position: absolute;
+    width: 10px;
+    height: 0px;
+    left: 878px;
+    top: 27px;
+
+    border: 2px solid #676767;
+    transform: rotate(53.13deg);
+}
+
+/* Busca un empleo, localidad... */
+.searchbarText {
+    position: absolute;
+    width: 329px;
+    height: 29px;
+    left: 28px;
+    top: 13px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 29px;
+    /* identical to box height */
+
+    color: #767575;
+}
+
+
+/* Acceso
+
+position: absolute;
+width: 187px;
+height: 48px;
+left: 1731px;
+top: 16px;
+*/
+
+
+/* Rectangle 2 */
+/*
+box-sizing: border-box;
+
+position: absolute;
+width: 120px;
+height: 48px;
+left: calc(50% - 120px/2 + 1.5px);
+top: calc(50% - 48px/2);
+
+background: #D9D9D9;
+border: 1px solid #878080;
+border-radius: 10px;
+*/
+
+/* Acceder */
+/*
+position: absolute;
+width: 95px;
+height: 29px;
+left: calc(50% - 95px/2);
+top: calc(50% - 29px/2 + 0.5px);
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 24px;
+line-height: 29px;
+color: #000000;
+*/
+
+
+/* Topbarseparator */
+.topbarSeparator {
+    position: absolute;
+    width: 1920px;
+    height: 0px;
+    left: 0px;
+    top: 83px;
+
+    border: 1px solid #7C7C7C;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    transform: rotate(-0.09deg);
+}
+
+/* Sidebar */
+.sidebar {
+    position: absolute;
+    width: 240px;
+    height: 941px;
+    left: 0px;
+    top: 83px;
+}
+
+
+/* Rectangle 3 */
+.sidebarBackground {
+    position: absolute;
+    width: 240px;
+    height: 941px;
+    left: 0px;
+    top: 0px;
+
+    background: #FFFFFF;
+}
+
+/* Zoom */
+.zoomText {
+    position: absolute;
+    width: 65px;
+    height: 29px;
+    left: 15px;
+    top: 10px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 29px;
+    /* identical to box height */
+
+    color: #000000;
+}
+
+
+/* Line 3 */
+.sliderBackground {
+    position: absolute;
+    width: 185px;
+    height: 0px;
+    left: 27px;
+    top: 60px;
+
+    border: 1px solid #000000;
+}
+
+/* Ellipse 2 */
+.sliderButton {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: 76px;
+    top: 50px;
+
+    background: #D9D9D9;
+    border: 1px solid #000000;
+}
+
+/* Ellipse 1 */
+.plusButton {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 219px;
+    top: 50px;
+
+    border: 2px solid #676767;
+}
+
+/* Line 1 */
+.plusButton2 {
+    position: absolute;
+    width: 10px;
+    height: 0px;
+    left: 229px;
+    top: 64px;
+
+    border: 2px solid #676767;
+    transform: rotate(53.13deg);
+}
+
+/* Ellipse 2 */
+.minusButton {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 4px;
+    top: 50px;
+
+    border: 2px solid #676767;
+}
+
+/* Line 3 */
+.minusButton2 {
+    position: absolute;
+    width: 10px;
+    height: 0px;
+    left: 14px;
+    top: 64px;
+
+    border: 2px solid #676767;
+    transform: rotate(53.13deg);
+}
+
+/* Line 4 */
+.minusButton3 {
+    position: absolute;
+    width: 6px;
+    height: 0px;
+    left: 9px;
+    top: 59px;
+
+    border: 1px solid #676767;
+}
+
+/* Line 5 */
+.plusButton3 {
+    position: absolute;
+    width: 6px;
+    height: 0px;
+    left: 224px;
+    top: 58px;
+
+    border: 1px solid #676767;
+}
+
+/* Line 6 */
+.plusButton4 {
+    position: absolute;
+    width: 6px;
+    height: 0px;
+    left: 227px;
+    top: 61px;
+
+    border: 1px solid #676767;
+    transform: rotate(-90deg);
+}
+
+/* Filters */
+.filtersContainer {
+    position: absolute;
+    width: 240px;
+    height: 849px;
+    left: 0px;
+    top: 92px;
+}
+
+
+/* Filtros */
+.filersLabel {
+    position: absolute;
+    width: 70px;
+    height: 29px;
+    left: 16px;
+    top: 18px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 29px;
+    /* identical to box height */
+
+    color: #000000;
+}
+
+
+/* Mapa */
+.mapLabel {
+    position: absolute;
+    width: 64px;
+    height: 29px;
+    left: 16px;
+    top: 268px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 29px;
+    /* identical to box height */
+
+    color: #000000;
+}
+
+
+/* Ofertas empleo */
+.offersLabel {
+    position: absolute;
+    width: 117px;
+    height: 19px;
+    left: 27px;
+    top: 60px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+
+    color: #000000;
+}
+
+
+/* Rectangle 4 */
+.offersBox {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    left: 224px;
+    top: 64px;
+
+    background: #FFFFFF;
+    border: 1px solid #000000;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Rectangle 5 */
+.employeesBox {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    left: 224px;
+    top: 90px;
+
+    background: #FFFFFF;
+    border: 1px solid #000000;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Rectangle 6 */
+.nssBox {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    left: 224px;
+    top: 116px;
+
+    background: #FFFFFF;
+    border: 1px solid #000000;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Rectangle 7 */
+.contractsBox {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    left: 224px;
+    top: 142px;
+
+    background: #FFFFFF;
+    border: 1px solid #000000;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Rectangle 8 */
+.endcontractsBox {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    left: 224px;
+    top: 168px;
+
+    background: #FFFFFF;
+    border: 1px solid #000000;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Rectangle 9 */
+.starttempcontractsBox {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    left: 224px;
+    top: 194px;
+
+    background: #FFFFFF;
+    border: 1px solid #000000;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Rectangle 10 */
+.endtempcontractsBox {
+    box-sizing: border-box;
+
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    left: 224px;
+    top: 220px;
+
+    background: #FFFFFF;
+    border: 1px solid #000000;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* # Empleados */
+.employeesLabel {
+    position: absolute;
+    width: 98px;
+    height: 19px;
+    left: 27px;
+    top: 86px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+
+    color: #000000;
+}
+
+/* # Afiliados Seg Social */
+.nssLabel {
+    position: absolute;
+    width: 163px;
+    height: 19px;
+    left: 27px;
+    top: 112px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+
+    color: #000000;
+}
+
+
+/* Nuevos contratos / año */
+.contractsLabel {
+    position: absolute;
+    width: 177px;
+    height: 19px;
+    left: 27px;
+    top: 138px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+
+    color: #000000;
+}
+
+
+/* Nuevos cntr. temp. / año */
+.starttempcontractsLabel {
+    position: absolute;
+    width: 186px;
+    height: 19px;
+    left: 27px;
+    top: 190px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+
+    color: #000000;
+}
+
+
+/* Cese cntr. temp. / año */
+.endtempcontractsLabel {
+    position: absolute;
+    width: 167px;
+    height: 19px;
+    left: 27px;
+    top: 216px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+
+    color: #000000;
+}
+
+
+/* Mapa frecuencias */
+.freqMap {
+    position: absolute;
+    width: 135px;
+    height: 19px;
+    left: 27px;
+    top: 310px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+
+    color: #000000;
+}
+
+
+/* Mapa provincias */
+.provMap {
+    position: absolute;
+    width: 124px;
+    height: 19px;
+    left: 28px;
+    top: 361px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+
+    color: #000000;
+}
+
+
+/* Mapa crecimiento empleo */
+.growEmploy {
+    position: absolute;
+    width: 183px;
+    height: 18px;
+    left: 27px;
+    top: 336px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 18px;
+
+    color: #000000;
+}
+
+
+/* Cese contratos / año */
+.endcontractsLabel {
+    position: absolute;
+    width: 158px;
+    height: 19px;
+    left: 27px;
+    top: 164px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+
+    color: #000000;
+}
+
+
+/* Line 7 */
+.filterChecked
+{    position: absolute;
+    width: 14.14px;
+    height: 0px;
+    left: 224px;
+    top: 65px;
+
+    border: 1px solid #000000;
+    transform: rotate(45deg);}
+
+
+/* Line 8 */
+.filterChecked2 {
+    position: absolute;
+    width: 14.14px;
+    height: 0px;
+    left: 235px;
+    top: 65px;
+
+    border: 1px solid #000000;
+    transform: matrix(-0.71, 0.71, 0.71, 0.71, 0, 0);
+}
+
+
+/* Line 2 */
+.sidebarSeparator {
+    position: absolute;
+    width: 943px;
+    height: 0px;
+    left: 242px;
+    top: 83px;
+
+    border: 1px solid #8C8C8C;
+    box-shadow: 4px 0px 4px rgba(0, 0, 0, 0.25);
+    transform: rotate(90deg);
+}
+
+/* MapVisor */
+.mapContainer {
+    position: absolute;
+    width: 1676px;
+    height: 941px;
+    left: 244px;
+    top: 83px;
+}
